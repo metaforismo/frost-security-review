@@ -32,7 +32,8 @@ def xsign_sign(privkey_hex, msg_hex):
     return out.stdout.strip()
 
 BASE = os.environ.get("FROSTD_BASE", "http://127.0.0.1:27499")
-OUTDIR = os.path.dirname(os.path.abspath(__file__))
+OUTDIR = os.environ.get("FUZZ_OUTDIR", os.path.dirname(os.path.abspath(__file__)))
+os.makedirs(OUTDIR, exist_ok=True)
 RESULTS = os.path.join(OUTDIR, "results.jsonl")
 CRASHDIR = os.path.join(OUTDIR, "crashes")
 os.makedirs(CRASHDIR, exist_ok=True)
@@ -840,6 +841,7 @@ def main():
     log(event="start", seed=SEED, rss_kb=rss_kb())
     phases = {"0": phase0, "1": phase1, "2": lambda: phase2(400), "3": phase3,
               "4": phase4, "5": phase5}
+    failed = False
     for w in which:
         print(f"=== phase {w} ===", flush=True)
         try:
@@ -850,12 +852,16 @@ def main():
             ok = False
         if not ok:
             print(f"phase {w} FAILED (see results)", flush=True)
+            failed = True
             break
         if not check_alive(w, "post-phase"):
+            failed = True
             break
     log(event="end", rss_kb=rss_kb(), crashes=len(crash_inputs))
     print(f"done. crashes saved: {crash_inputs}", flush=True)
     results_f.close()
+    if failed:
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

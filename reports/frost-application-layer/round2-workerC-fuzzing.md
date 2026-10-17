@@ -2,7 +2,7 @@
 
 *Note di lavoro originarie, 2026-10-17; successivamente pubblicate. Le campagne descritte sono riportate dall'autore originario, non rieseguite integralmente nella verifica successiva.*
 
-> [Stato delle prove e correzioni](../../ERRATA-AND-EVIDENCE.md): i log grezzi e il sorgente del helper XEdDSA non sono inclusi. Le 1.237 righe del JSONL finale non equivalgono a 1.237 richieste HTTP.
+> [Stato delle prove e correzioni](../../ERRATA-AND-EVIDENCE.md): i log grezzi storici e il sorgente **originale** dell'helper XEdDSA non sono disponibili. Le 1.237 righe del JSONL finale non equivalgono a 1.237 richieste HTTP. Un [helper ricostruito](../../poc/fuzzing/README.md) e un [nuovo replay debug](../../verification/2026-10-17/fuzz-replay-summary.md) sono stati pubblicati separatamente; non sostituiscono gli artefatti originari.
 
 ## Verdetto
 
