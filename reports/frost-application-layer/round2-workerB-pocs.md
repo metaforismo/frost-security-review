@@ -49,7 +49,7 @@ Crescita riportata circa lineare: una copia di 65.535 byte per destinatario più
 - responder = `local_private_key(coord_priv).remote_public_key(victim_pub).build_responder()` (rs pre-popolato con la chiave attesa, come `recv_noise_map[sender]`);
 - initiator = `local_private_key(attacker_priv).remote_public_key(coord_pub).build_initiator()` (statica DIVERSA; la pubkey del coordinator è pubblica, necessaria per i DH `es`/`ss`).
 
-**Output osservato:**
+**Output riportato nelle note originali (log grezzi non disponibili):**
 ```
 (A) honest handshake (static == expected rs): true
 (B) impersonation handshake (attacker static, victim rs): Err(Decrypt)
@@ -99,7 +99,7 @@ aggregate() failed as expected.
 
 ## Implicazioni per il coordinatore
 
-1. **#1 (frostd DoS) resta l'unico candidato vivo** dei tre — confermato con numeri misurati e kill dimostrato. Basso valore di submission (demo code), ma bug reale.
+1. **#1 (frostd DoS) resta l'unico candidato vivo dei tre.** Il fan-out senza limite aggregato è visibile nel codice e una verifica locale ha recuperato 64 copie del messaggio. Le misure RSS Linux e il kill test sono risultati riportati dalle note originali, senza log grezzi disponibili, e non sono stati riprodotti nella verifica successiva. L'impatto resta circoscritto al relay demo nei percorsi verificati.
 2. **#2 (Noise_K impersonation) va chiuso**: l'analisi Round 1 era sbagliata sul meccanismo cripto. snow 0.9.6 autentica `rs` via transcript hash. Nessun fix necessario.
 3. **#3 (cheater detection) va chiuso o declassato a nota**: l'analisi Round 1 non aveva verificato i default features. L'attribuzione esiste già; resta solo la mancanza di exclusion/retry nel coordinator (robustness minore).
 4. Lezione metodologica: **verificare sempre i default features** dei crate prima di affermare "senza la feature X" — `cargo tree -e features` è il check da una riga. E per snow: il pattern K one-way di snow NON è il K interattivo della spec — i pre-messaggi includono la statica dell'initiator.
