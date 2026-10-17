@@ -1,12 +1,16 @@
 # Security Audit — `frost-client` coordinator
 
-*Sub-audit del depth track frost-client, 2026-10-17. Analisi statica, nessuna disclosure. Librerie verificate dai sorgenti crates.io: frost-core 2.2.0, frost-rerandomized 2.1.0, snow 0.9.6.*
+*Sub-audit del depth track frost-client, 2026-10-17. Note originarie di analisi statica, seguite da verifiche mirate. Librerie esaminate dai sorgenti crates.io: frost-core 2.2.0, frost-rerandomized 2.1.0, snow 0.9.6.*
 
 > **Historical notes; see [errata](../../ERRATA-AND-EVIDENCE.md).** The original F1 (Noise_K impersonation) and F2 (missing cheater detection) were **withdrawn**. Noise_K has no transmitted static-key token in its first message, and frost-core 2.2.0 enabled cheater detection by default. The original detailed claims and proposed fixes are available in Git history; they must not be treated as current findings.
 
 ## F3 — Socket comms: identifier autodichiarati, nessun membership check (demo transport)
 
-**File:** `frost-client/src/coordinator/comms/socket.rs:72-115`. `_public_key_package` ignorato; identifier dal peer; primi N che connettono occupano gli slot; secondo messaggio con stesso identifier sovrascrive endpoint+commitment dell'onesto. Plaintext TCP senza auth. Impatto: DoS/esclusione, niente forgery. Scoping onesto: path di produzione è HTTP/Noise_K; il README dichiara demo/WIP.
+**File:** `frost-client/src/coordinator/comms/socket.rs:72-115`. `_public_key_package` ignorato; identifier dal peer; primi N che connettono occupano gli slot; secondo messaggio con stesso identifier sovrascrive endpoint+commitment dell'onesto. Plaintext TCP senza auth. Impatto: DoS/esclusione, niente forgery. Scoping: il README dichiara demo/WIP; una distribuzione di produzione di questo trasporto non è stata stabilita.
+
+## F4 — Socket coordinator: coda piena manda in panic il task di ascolto
+
+Il trasporto socket passa ogni frame ricevuto a un canale Tokio da 2.000 voci con `input_tx.try_send(...).unwrap()` in [`socket.rs:63`](https://github.com/ZcashFoundation/frost-tools/blob/53df99c2bd61f7cb60a0d1f634822a76be3799cf/frost-client/src/coordinator/comms/socket.rs#L63). Un [PoC localhost](../../poc/socket-queue-overflow/README.md) ha lasciato fermo il consumatore e inviato 3.000 frame da un peer senza credenziali. Il task di ascolto ha prodotto `panicked ... Err value: "Full(..)"`. Il test non prova l'uscita del processo coordinatore o il blocco di ogni cerimonia attiva. L'effetto dimostrato è la morte del task che inoltra i messaggi del trasporto demo; non emerge un percorso verso firme falsificate o fondi. La precedente F3 già descriveva l'assenza di autenticazione del socket, ma non questo overflow della coda.
 
 ## Split-view / equivocation — no forgery demonstrated in this review
 
