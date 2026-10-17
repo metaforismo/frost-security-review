@@ -1,0 +1,3 @@
+{"recipients": 500, "message_bytes": 65535, "rss_before_kib": 14064, "rss_after_kib": 45024, "rss_delta_mib": 30.234, "payload_mib": 31.25, "server_alive": true}
+{"recipients": 1000, "message_bytes": 65535, "rss_before_kib": 14544, "rss_after_kib": 77776, "rss_delta_mib": 61.75, "payload_mib": 62.499, "server_alive": true}
+{"recipients": 2000, "message_bytes": 65535, "rss_before_kib": 14976, "rss_after_kib": 20704, "rss_delta_mib": 5.594, "payload_mib": 124.998, "server_alive": true}
