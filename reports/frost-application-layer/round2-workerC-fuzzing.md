@@ -1,11 +1,13 @@
 # Round 2 — Worker C: fuzzing della state machine HTTP di `frostd`
 
-*Depth audit frost-client, 2026-10-17. NESSUNA disclosure, NESSUNA submission. Solo test locali su `127.0.0.1`.*
+*Note di lavoro originarie, 2026-10-17; successivamente pubblicate. Le campagne descritte sono riportate dall'autore originario, non rieseguite integralmente nella verifica successiva.*
+
+> [Stato delle prove e correzioni](../../ERRATA-AND-EVIDENCE.md): i log grezzi e il sorgente del helper XEdDSA non sono inclusi. Le 1.237 righe del JSONL finale non equivalgono a 1.237 richieste HTTP.
 
 ## Verdetto
 
-**Negativo onesto: nessun crash, nessun panic, nessun bypass, nessuna inconsistenza di stato.**
-Il server è sopravvissuto a ~1.270 richieste fuzzate (malformate, sequenze, race, boundary) restando sempre vivo e consistente — **sia con il build release che con il build debug** (quest'ultimo con overflow checks e `debug_assertions` attivi: 0 panic anche lì). Unico comportamento confermato: la crescita memoria lineare e unbounded del fan-out in `send`, che è il meccanismo del finding #1 già registrato nell'audit (`frostd-audit.md`) — qui solo riverificato in forma bounded, non un nuovo finding.
+**Esito riportato dal report originario: nessun crash o panic nelle campagne descritte.**
+Le note originarie descrivono campagne con input malformati, sequenze, race e boundary, riportando che il server è rimasto vivo e consistente — **sia con il build release che con il build debug** (quest'ultimo con overflow checks e `debug_assertions` attivi: 0 panic anche lì). Il report descrive anche crescita della memoria nel fan-out di `send`, che è il meccanismo del finding #1 già registrato nell'audit (`frostd-audit.md`). La successiva verifica locale ha confermato copie in coda, senza riprodurre quella misura RSS.
 
 ## Setup
 

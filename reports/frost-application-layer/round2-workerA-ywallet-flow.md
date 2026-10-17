@@ -1,9 +1,11 @@
 # Round 2 — Worker A: FROST integration in the real wallet flow (Zcash)
 
 *Depth audit, 2026-10-17. Static analysis + live verification of repos and docs. No disclosure, no submission.*
+> These are historical working notes. See [ERRATA-AND-EVIDENCE.md](../../ERRATA-AND-EVIDENCE.md) for corrections and the distinction between source observations and deployment claims. The initial Ywallet transaction-planning UI can display transaction details; the opaque-hex concern is about the later CLI signing-confirmation steps.
+
 *Scope: ywallet (hhanh00/zwallet @ `865dc0e`), Zallet (zcash/zallet @ main 2026-10-17), frost-tools (ZcashFoundation/frost-zcash-demo @ `53df99c`), ZF FROST Book, OpenPGP Wallet forum design.*
 
-**Verdict up front:** ywallet contains **zero** FROST/threshold code (verified across Dart, Rust bridge, Android, iOS). Zallet contains **zero** FROST signing code (frost crates are transitive via `reddsa` only). The "integration" is purely architectural and, as of HEAD, **broken end-to-end**: `zcash-sign` no longer accepts Ywallet's JSON plan (disabled in #574), and no component in the stack builds a PCZT from it — the FROST Book tutorial documents a flow that no longer runs. Where the flow *does* run (external PCZT → `zcash-sign` → `frost-client` → `zcash-sign` → broadcast), **no human at any step sees transaction content**: every checkpoint shows only opaque hex (sighash, randomizers). A malicious coordinator can substitute an arbitrary PCZT and honest co-signers will sign it with no possible detection — the y/n veto is informationally vacuous. The crypto (FROST unforgeability, `apply_signature`'s rk+sighash check) is intact; this is a pure what-you-see-is-what-you-sign composition gap. **No production fund-diversion path exists today** (no production wallet consumes this flow), so per protocol: **no private draft, no STOP** — gaps documented below as design requirements for any production integration.
+**Revised scope:** searches of the named wallet snapshots did not find a complete FROST signing flow. The documented Ywallet JSON-plan route into `zcash-sign` appears disabled in the reviewed source, while a separate external-PCZT CLI signing route displays opaque hex at later signer confirmations. This is a design observation for those tools, not proof that all wallet checkpoints are blind or that no deployment exists. No production wallet exploit was demonstrated.
 
 ---
 
@@ -171,7 +173,7 @@ Forum: ["FROST 2-of-3 between a user's own devices for shielded ZEC (Ironwood)"]
 
 | Property | Ywallet + frost-client (HEAD) | OpenPGP Wallet (design) |
 |---|---|---|
-| Signer sees amounts/recipients | **No** — sighash hex only, at every checkpoint | Yes — native confirmation screen on the phone |
+| Signer sees amounts/recipients | **No in the reviewed CLI signing confirmations** — sighash/message hex; the earlier Ywallet planning UI can display details | Yes — native confirmation screen on the phone |
 | Independent per-signer tx verification | **No** — only the PCZT builder (out-of-band) ever sees content | Yes — phone re-parses PCZT, runs ZIP 374 signer checks |
 | Redacted-PCZT policy | No concept (signer can't inspect anyway) | Refused |
 | Binding: what-you-saw ↔ what-you-signed | **None** — plan screen disconnected from sighash | Phone signs the exact PCZT it displayed |
@@ -197,6 +199,6 @@ Forum: ["FROST 2-of-3 between a user's own devices for shielded ZEC (Ironwood)"]
 - **Zallet:** no FROST signing code. frost crates are transitive via `reddsa 0.5.2` only.
 - **Real flow (HEAD):** external PCZT → `zcash-sign` (blind hex checkpoints) → `frost-client` coordinator/participants (blind hex + vacuous y/n) → `zcash-sign` assembly (`apply_signature` = self-consistency only) → blind broadcast. The Book's Ywallet-JSON step is dead since #574.
 - **Composition gap (the finding):** a malicious coordinator can substitute an arbitrary PCZT; honest co-signers cannot detect it — the sighash is computationally hiding and no participant ever parses the transaction. Full diversion path traced in §5b. Crypto intact; WYSIWYS absent.
-- **Production impact:** **none today** — no production wallet consumes this flow, and the documented Ywallet path doesn't run. Per task protocol: **no private draft, no STOP**. This is a demo-tooling design gap that must be closed (per-signer PCZT parsing + ZIP 374 signer checks before the y/n prompt, à la OpenPGP Wallet's phone model) before any production integration carries real funds.
+- **Production impact:** no production wallet exploit was demonstrated in the reviewed snapshots; deployment-wide absence was not established. The documented Ywallet path appears disabled in the reviewed source. Per task protocol: **no private draft, no STOP**. This is a demo-tooling design gap that must be closed (per-signer PCZT parsing + ZIP 374 signer checks before the y/n prompt, à la OpenPGP Wallet's phone model) before any production integration carries real funds.
 
 *Files referenced: `~/workspace/hunt/frost-client-audit/ywallet` @865dc0e, `/tmp/zallet-main` (zcash/zallet main, 2026-10-17), `~/workspace/hunt/frost-client-audit/frost-tools` @53df99c. Prior reports: `~/workspace/bounty/reports/zcash-audit/frost-client/AUDIT-REPORT-2026-10-17.md`, `dkg-zcashsign-audit.md`.*

@@ -1,0 +1,14 @@
+{
+  "date": "2026-10-17",
+  "upstream_commit": "53df99c2bd61f7cb60a0d1f634822a76be3799cf",
+  "platform": "macOS arm64",
+  "build": "debug, rustc 1.96.0",
+  "recipient_entries": 64,
+  "distinct_recipient_keys": 1,
+  "message_bytes": 65535,
+  "expected_queued_payload_bytes": 4194240,
+  "exit_code": 0,
+  "server_alive": true,
+  "stdout": "logged in, token acquired\nsession 22b926ae-b645-4eb2-854c-ed4b24b839e0 created with 1 pubkeys\noversize_message_rejected=true status=500 Internal Server Error\nserver RSS before send: None\nsend status: 200 OK (took 11.007334ms)\nsend body (truncated): \nqueued_copies_verified=64 queued_payload_bytes=4194240\nserver RSS after send:  None\nRSS measurement intentionally omitted in queue-copy check\n",
+  "stderr": ""
+}

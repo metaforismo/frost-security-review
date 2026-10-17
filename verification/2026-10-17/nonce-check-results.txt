@@ -1,0 +1,5 @@
+constant_rng_repeats_nonce=true
+same_nonce_and_commitments_sign_two_messages=true
+scope=frost-ed25519 2.1.0 / frost-core 2.2.0; synthetic ephemeral keys only
+Executed locally on macOS arm64 with rustc 1.96.0, 2026-10-17.
+This verifies application responsibilities; it does not establish a new vulnerability in FROST.

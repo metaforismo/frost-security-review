@@ -1,13 +1,15 @@
 # DEPTH AUDIT Round 2 — Worker B: PoC pratici candidati #1/#2/#3 (FROST/zcash)
 
-*2026-10-17. Tutti i PoC ESEGUITI, non solo descritti. NESSUNA disclosure, NESSUNA submission.*
+*Note di lavoro originarie del 2026-10-17, con correzioni successive. Le esecuzioni qui descritte sono dichiarate dal report originario. I relativi log grezzi e i driver dei PoC #2/#3 non sono inclusi nel repository pubblico.*
+
+> Leggere [ERRATA-AND-EVIDENCE.md](../../ERRATA-AND-EVIDENCE.md) per lo stato delle verifiche indipendenti, i limiti e i collegamenti alle comunicazioni upstream.
 *Repo: `~/workspace/hunt/frost-client-audit/frost-tools` (commit di lavoro locale). Build con `CARGO_TARGET_DIR=~/workspace/hunt/frost-client-audit/target-workerB`, rustc 1.99.1.*
 
 ## Sintesi verdetti
 
 | PoC | Candidato Round 1 | Verdetto | Note |
 |-----|-------------------|----------|------|
-| #1 | frostd memory exhaustion (`functions.rs:196-237`) | **CONFERMATO** | Numeri misurati, DoS con singola richiesta dimostrato via OOM-kill |
+| #1 | frostd memory exhaustion (`functions.rs:196-237`) | **CONFERMATO DAL REPORT ORIGINARIO** | Misure riportate; arresto per fallimento allocatore |
 | #2 | Noise_K peer impersonation (`cipher.rs:234-243`, snow 0.9.6) | **SMENTITO** | L'assunto cripto del Round 1 è falso: snow lega `rs` al transcript hash |
 | #3 | Missing cheater detection (`coordinator/cli.rs:79-92`) | **SMENTITO** (claim centrale) | `cheater-detection` è nei *default features* di frost-core 2.2.0; il colpevole VIENE identificato |
 
@@ -24,20 +26,20 @@
 
 **Output osservato (numeri misurati):**
 
-| recipients | msg | crescita RSS misurata | payload atteso | per-recipient |
-|---|---|---|---|---|
-| 500 | 65535 B | **31.6 MB** | 31.2 MB | 63.2 KB |
-| 1000 | 65535 B | **63.1 MB** | 62.5 MB | 63.1 KB |
-| 2000 | 65535 B | **126.1 MB** | 125.0 MB | 63.1 KB |
+| recipients | msg | crescita RSS riportata | payload teorico |
+|---|---|---|---|
+| 500 | 65535 B | **31.6 MiB** | 31.2 MiB |
+| 1000 | 65535 B | **63.1 MiB** | 62.5 MiB |
+| 2000 | 65535 B | **126.1 MiB** | 125.0 MiB |
 
-Linearità quasi perfetta: ~63.1 KB/recipient (65535 B + overhead struct). `send` ha risposto `200 OK` in 52–148 ms in tutti i casi.
+Crescita riportata circa lineare: una copia di 65.535 byte per destinatario più overhead. Il driver converte RSS in KiB dividendo per 1.024: l'unità corretta della tabella è MiB; le precedenti stime di ~63.1 KB/destinatario mescolavano unità e sono ritirate. `send` ha risposto `200 OK` in 52–148 ms in tutti i casi.
 
 **Kill test:** server fresco sotto `ulimit -v 800000`, singolo `send` con **29000 recipients × 65535 B** (≈1.9 GB estrapolati):
 - il server ha abortito: log `memory allocation of 65535 bytes failed` → SIGABRT (comportamento standard di Rust su allocator failure);
 - il client ha visto `hyper::Error(IncompleteMessage)` (connessione troncata);
 - `ps` conferma: **SERVER DEAD**.
 
-**Verdetto: CONFERMATO.** Un singolo `send` autenticato può accodare ~1.9 GB con una richiesta HTTP e uccidere il processo frostd (DoS totale del relay → nessuna cerimonia si completa). Senza ulimit, la stessa richiesta avrebbe consumato ~1.9 GB di RSS reale (estrapolazione lineare dai dati misurati). Nota onesta: serve un login valido (self-registration, nessuna validazione d'identità), e il codice è demo ("not for production") — impatto reale ma valore di submission basso, come già notato nel Round 1.
+**Verdetto: CONFERMATO.** Un singolo `send` autenticato può accodare ~1.9 GB con una richiesta HTTP e uccidere il processo frostd (DoS totale del relay → nessuna cerimonia si completa). Il prodotto 29.000 × 65.535 = 1.900.515.000 byte è il payload teorico (circa 1,90 GB / 1,77 GiB), non una RSS misurata nel run che abortisce. Nota onesta: serve un login valido (self-registration, nessuna validazione d'identità), e il codice è demo ("not for production") — impatto reale ma valore di submission basso, come già notato nel Round 1.
 
 ---
 
@@ -54,7 +56,7 @@ Linearità quasi perfetta: ~63.1 KB/recipient (65535 B + overhead struct). `send
 (C) handshake with matching expectation (attacker static, attacker rs): true
 ```
 
-**Analisi della discrepanza rispetto al Round 1.** Il Round 1 affermava che la statica dell'initiator sovrascrive `rs` senza confronto (`handshakestate.rs:390-391`) e che quindi l'handshake riuscirebbe. La sovrascrittura esiste davvero, ma è **irraggiungibile con chiave mismatched**: il pattern Noise_K one-way in snow 0.9.6 è `(premsg_i=[S], premsg_r=[S], msgs)` (`params/patterns.rs:309-313`) — cioè **la chiave statica dell'initiator è mescolata nell'hash del transcript all'inizializzazione su entrambi i lati** (initiator: propria pubkey in `handshakestate.rs:83-93`; responder: l'`rs` pre-popolato in `handshakestate.rs:107-116`). Se la statica reale dell'initiator differisce dall'`rs` atteso, gli hash divergono e il decrypt del token S fallisce con `Decrypt` PRIMA che la sovrascrittura possa avvenire. (Nota: snow richiede addirittura `rs` al `build_responder` per K — `Prereq(RemotePublicKey)` altrimenti.)
+**Analisi corretta del pattern (verifica sorgenti del 2026-10-17).** Nel `Noise_K` one-way di snow 0.9.6, le chiavi statiche sono pre-messaggi e il messaggio contiene `[E, Dh(Es), Dh(Ss)]`: **non contiene alcun token `S`**. La precedente descrizione del decrypt di un token `S` e della sua sovrascrittura non descrive quindi il percorso K. L'autenticazione dipende, tra l'altro, dal DH statico-statico `ss`, che richiede la chiave privata corrispondente alla chiave statica attesa. Il verdetto di ritiro del candidato impersonation resta coerente con il sorgente; le trascrizioni di esecuzione di seguito sono quelle riportate nelle note originali, non log grezzi pubblicati separatamente.
 
 **Verdetto: SMENTITO.** L'handshake di impersonificazione fallisce a livello crittografico. Il commento in `cipher.rs` ("this authenticates the sender") è **vero negli effetti**: forgiare `sender` seleziona uno stato responder il cui `rs` atteso non può coincidere con la statica reale dell'attaccante → handshake fallito → decrypt fallito. Il confronto mancante di `get_remote_static()` (confermato: 0 occorrenze in `frost-client/src`) è innocuo — sarebbe ridondante. **F1 del coordinator-audit va rimosso/chiuso.**
 

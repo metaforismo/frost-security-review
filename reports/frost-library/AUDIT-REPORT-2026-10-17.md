@@ -1,7 +1,9 @@
 # Deep Audit — FROST v3 / ZIP-312 / DKG (RedPallas)
 
 *Audit crittografico profondo, 2026-10-17. NESSUNA submission, NESSUNA disclosure — solo analisi.
-Report privato per coordinazione parent.*
+Note di lavoro originarie, successivamente pubblicate. Correzioni di verifica aggiunte il 2026-10-17.*
+
+> Leggere prima [ERRATA-AND-EVIDENCE.md](../../ERRATA-AND-EVIDENCE.md). Le affermazioni non riesaminate non costituiscono una certificazione indipendente.
 
 ## Target
 
@@ -17,25 +19,25 @@ File analizzati integralmente: `frost-core/src/{round1,round2,lib,signature,keys
 
 ## Verdetto
 
-**NESSUN FINDING SOTTOMETTTIBILE.** Il codice è in forma eccellente: ogni superficie prioritaria è risultata solida o con difese complete e verificate. Questo è un verdetto onesto dopo depth-first reale, non un passaggio superficiale — ogni lead sotto è stato inseguito fino a una ragione di chiusura.
+**Stato delle note:** non viene presentato un exploit critico contro la libreria. Le analisi seguenti sono note di ricerca AI-assisted; alcune motivazioni originali erano errate e sono corrette qui e nell'[errata](../../ERRATA-AND-EVIDENCE.md). Il mancato riscontro di un exploit non dimostra la sicurezza complessiva del codice né la chiusura esaustiva di tutte le superfici.
 
-La classe "threshold signature" è notoriamente sottile, ma questa implementazione beneficia di: spec RFC 9591 matura, due audit esterni precedenti (NCC 2021 sul frost originale in reddsa), BlockSec (fix refresh 2.2.0), e l'iterazione v3 che ha reso il cheater detection default-on.
+La classe "threshold signature" è notoriamente sottile, ma questa implementazione beneficia di: spec RFC 9591 matura, due audit esterni precedenti (NCC 2021 sul frost originale in reddsa), BlockSec (fix refresh 2.2.0), e le correzioni documentate nelle versioni precedenti. La cheater detection era già abilitata nei default feature di frost-core 2.2.0; v3 non l'ha introdotta.
 
 ---
 
-## Superficie 1 — Nonce management ✅ SOLIDA
+## Superficie 1 — Nonce management analisi del codice
 
-**Generazione** (`round1.rs::Nonce::new`): `H3(random_bytes[32] || secret_share)` — hedged nonce generation per RFC 9591 `nonce_generate(secret)`. Se l'RNG è rotto (output costante), il nonce resta `H3(costante || secret)`: deterministico ma dipendente dal segreto, imprevedibile per gli altri, unico per partecipante. L'hedge funziona come progettato.
+**Generazione** (`round1.rs::Nonce::new`): `H3(random_bytes[32] || secret_share)`, come nel nonce generation di RFC 9591. **Correzione:** il contributo del segreto non rende sicuro un RNG che ripete costantemente gli stessi byte. A parità di segreto e byte casuali, il nonce si ripete; servono casualità sicura fresca e gestione monouso dei nonce. Questo corregge un'affermazione di questo report, non identifica una nuova vulnerabilità nell'implementazione.
 
-**Hiding + binding**: due nonce indipendenti (due chiamate RNG separate). Il binding factor lega i nonce a `(VK_gruppo || H4(msg) || H5(commitments) || id)` — verificato in `binding_factor_preimages` (lib.rs:413). Corretto per RFC 9591, previene gli attacchi Drijvers-style.
+**Hiding + binding**: due chiamate RNG separate, con indipendenza richiesta alla sorgente di casualità sicura. Il binding factor lega i nonce a `(VK_gruppo || H4(msg) || H5(commitments) || id)` — verificato in `binding_factor_preimages` (lib.rs:413). Corretto per RFC 9591, previene gli attacchi Drijvers-style.
 
 **Check in `sign()`** (round2.rs): prima di firmare, verifica che `signer_nonces.commitments == signing_package.commitments[id]` → `Error::IncorrectCommitment`. Impedisce al coordinator malevolo di sostituire i commitment del firmatario. ✅ (Questo è il check citato nel commento di round1.rs.)
 
 **Lead killato — riuso nonce**: `SigningNonces::from_nonces` è pubblico e il riuso tra sessioni diverse è un MUST NOT documentato (leak della chiave con analisi standard). È responsabilità dell'applicazione, documentata esplicitamente. Non è un bug della libreria. *Killed: by design, documented.*
 
-**Lead killato — batch `preprocess()`**: genera N coppie nonce/commitment; se l'app perde il tracking di quale è stata usata, il `sign()` fallisce chiuso (`IncorrectCommitment`), non firma con nonce riusati. Fail-closed. *Killed.*
+**Gestione batch `preprocess()` — correzione:** genera N coppie nonce/commitment. `IncorrectCommitment` rileva una coppia nonce/commitment incoerente, ma non tiene una storia degli utilizzi: riusare insieme lo stesso nonce e il relativo commitment può superare quel controllo. L'applicazione deve impedire il riuso; l'API documenta esplicitamente questa responsabilità. Ritirata la precedente affermazione di prevenzione automatica del riuso.
 
-## Superficie 2 — DKG robustness ✅ SOLIDA (con 1 nota)
+## Superficie 2 — DKG robustness analisi del codice (con 1 nota)
 
 **Proof of Knowledge** (`keys/dkg.rs::compute_proof_of_knowledge`): Schnorr `σ=(R,μ)`, `μ = k + a_{i0}·c`, `c = HDKG(id || φ_{i0} || R)` con personalizzazione `"FROST_RedPallasD"` (domain separation verificata). Verifica: `R =? g^μ − φ₀^c`. Standard, corretta. Difesa rogue-key presente come da FROST paper Fig.1 (necessaria per `t ≥ n/2`).
 
@@ -56,13 +58,13 @@ La classe "threshold signature" è notoriamente sottile, ma questa implementazio
 
 **Lead killato — replay di round1 package tra sessioni DKG**: il commitment contiene coefficienti freschi; riusare un vecchio package impegna al vecchio polinomio, di cui l'attaccante non conosce i coefficienti → non può produrre share validi in round 2. *Killed.*
 
-## Superficie 3 — Binding e contesto ✅ SOLIDA
+## Superficie 3 — Binding e contesto analisi del codice
 
 - **Challenge**: `H2(R || VK || msg)`; per RedPallas `H2 = HStar::<SpendAuth>::default()` = BLAKE2b-512(`"Zcash_RedPallasH"`) — **verificato** contro `reddsa/src/orchard.rs:70`. È esattamente `H^⊛` della Zcash spec come richiede ZIP-312. ✅
 - **Domain separation completa**: H1 `FROST_RedPallasR`, H3 `FROST_RedPallasN`, H4 `FROST_RedPallasM`, H5 `FROST_RedPallasC`, HDKG `FROST_RedPallasD`, HID `FROST_RedPallasI`, HR `FROST_RedPallasA`. Nessuna collisione tra contesti. ✅
 - **Header di serializzazione**: ogni tipo porta `Header { version, ciphersuite_id }` validato in deserializzazione — niente cross-ciphersuite confusion. ✅
-- **Re-randomization** (`frost-rerandomized`): `randomizer = HR(seed || encode(commitments))`, seed inviata su canale confidenziale; i partecipanti **rigenerano** invece di fidarsi del RNG del coordinator (hedge documentato). `KeyPackage::randomize` marca il package come monouso. ✅
-- **Lead killato — coordinator malevolo che riusa il seed**: se il coordinator riusa lo stesso seed tra sessioni, le chiavi randomizzate coincidono → firme linkabili. Ma il threat model di ZIP-312 lo accetta esplicitamente: "A rogue Coordinator will be able to break unlinkability and privacy, but should not be able to create signed transactions". Il forgery resta impossibile (servono le share). *Killed: accepted in threat model.*
+- **Re-randomization** (`frost-rerandomized`): `randomizer = HR(seed || encode(commitments))`, seed inviata su canale confidenziale; i partecipanti **rigenerano** invece di fidarsi del RNG del coordinator (hedge documentato). `KeyPackage::randomize` documenta il divieto di riusare il package randomizzato, ma non imposta un flag monouso né registra gli utilizzi. Corretto il precedente claim di enforcement automatico.
+- **Seed ripetuto — correzione:** nel percorso v3 che deriva il randomizer da seed e commitment, ripetere soltanto il seed non implica la stessa chiave randomizzata: cambia anche l'input `encode(commitments)` quando i commitment cambiano. Una conclusione di linkabilità richiede uno scenario ulteriore dimostrato, o un percorso diverso con randomizer riusato. Ritirata l'implicazione automatica seed ripetuto → chiave randomizzata uguale. Restano separati i vincoli generali del threat model e l'obbligo di non riusare nonce.
 
 ## Superficie 4 — Rogue-key attacks ✅ DIFESE COMPLETE
 
@@ -107,6 +109,6 @@ Seguendo la lezione dell'audit Mina (gli override dei ciphersuite sono dove si c
 
 - DKG bias e coordinator-trust sono limitazioni documentate/accettate, non finding.
 - Se mai emergesse un finding serio: disclosure responsabile coordinata con ZF (embargo + fix) PRIMA di qualsiasi submission al grant Q4 (finestra 30 ott–13 nov). Il grant premia lavoro completato + disclosure corretta.
-- Questo report è privato. Niente disclosure pubblica.
+- Queste note sono state pubblicate. Issue sul relay: [frost-tools#611](https://github.com/ZcashFoundation/frost-tools/issues/611); richiesta di feedback: [frost#1102](https://github.com/ZcashFoundation/frost/discussions/1102).
 
-*Lead killati totali: 14. Finding sottomessibili: 0. Nit/robustness: 3 (tutti non-security).*
+*Il conteggio originario di 14 lead non è una misura di copertura o una prova di sicurezza. Alcune motivazioni sono state corrette; rimane necessario il riscontro tecnico dei maintainer.*
