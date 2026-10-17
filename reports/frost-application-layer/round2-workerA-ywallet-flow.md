@@ -1,7 +1,7 @@
 # Round 2 — Worker A: FROST integration in the real wallet flow (Zcash)
 
 *Depth audit, 2026-10-17. Static analysis + live verification of repos and docs. No disclosure, no submission.*
-> These are historical working notes. See [ERRATA-AND-EVIDENCE.md](../../ERRATA-AND-EVIDENCE.md) for corrections and the distinction between source observations and deployment claims. The initial Ywallet transaction-planning UI can display transaction details; the opaque-hex concern is about the later CLI signing-confirmation steps.
+> These are historical working notes. See [ERRATA-AND-EVIDENCE.md](../../ERRATA-AND-EVIDENCE.md) for corrections and the distinction between source observations and deployment claims. The initial Ywallet transaction-planning UI can display transaction details; the opaque-hex concern is about the later CLI signing-confirmation steps. The signing-oracle risk had already been raised in upstream [#333](https://github.com/ZcashFoundation/frost-tools/issues/333) and [#475](https://github.com/ZcashFoundation/frost-tools/issues/475); the trace below is not a novel vulnerability report.
 
 *Scope: ywallet (hhanh00/zwallet @ `865dc0e`), Zallet (zcash/zallet @ main 2026-10-17), frost-tools (ZcashFoundation/frost-zcash-demo @ `53df99c`), ZF FROST Book, OpenPGP Wallet forum design.*
 
