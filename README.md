@@ -10,7 +10,7 @@ Independent, AI-assisted review notes on selected FROST v3 components, a histori
 2. **HTTP/state-machine testing:** the original report describes release and debug campaigns with no crashes or panics. It records 1,237 JSONL lines for the final debug run; this is not an exact HTTP-request count, and the historical raw logs remain unavailable. A separate 17 October debug-build replay completed phases 0–4 without a relay crash or phase-2 invariant anomaly; its 1,245 JSONL records are also not an HTTP-request count. The reconstructed XEdDSA helper and safe local runner are now published. See the [replay summary](verification/2026-10-17/fuzz-replay-summary.md), [runnable harness](poc/fuzzing/README.md), and [original report](reports/frost-application-layer/round2-workerC-fuzzing.md).
 3. **CLI signing-confirmation observations:** the reviewed CLI checkpoints display a sighash/message as hex rather than rendering transaction details. This concerns those signing checkpoints; the initial Ywallet planning UI can display amounts and recipients. The underlying participant-as-signing-oracle risk was already tracked upstream in [frost-tools#333](https://github.com/ZcashFoundation/frost-tools/issues/333) and the earlier audit's [frost-tools#475](https://github.com/ZcashFoundation/frost-tools/issues/475). This review adds a snapshot-specific trace, not a novel vulnerability claim. No deployed wallet exploit has been demonstrated.
 4. **Withdrawn candidates and corrections:** Round 2 withdraws the earlier Noise_K impersonation and missing-cheater-detection claims. Additional corrections address nonce reuse, randomizer derivation, and evidence limits. Candidate notes are not validated vulnerabilities.
-5. **Demo socket availability:** a separate localhost PoC made the coordinator's unauthenticated TCP listener task panic when its 2,000-entry input channel filled. The process exit and signing impact were not established. See [PoC and limits](poc/socket-queue-overflow/README.md) and [coordinator notes](reports/frost-application-layer/coordinator-audit.md).
+5. **Demo socket availability:** a separate localhost PoC made the coordinator's unauthenticated TCP listener task panic when its 2,000-entry input channel filled. The process exit and signing impact were not established. See [PoC and limits](poc/socket-queue-overflow/README.md), [coordinator notes](reports/frost-application-layer/coordinator-audit.md), and [upstream issue #612](https://github.com/ZcashFoundation/frost-tools/issues/612).
 
 ## Reports
 
@@ -32,6 +32,7 @@ Some original notes retain language such as “private” or “no disclosure”
 ## Upstream communication and acceptance
 
 - [DoS issue: frost-tools#611](https://github.com/ZcashFoundation/frost-tools/issues/611).
+- [Socket listener issue: frost-tools#612](https://github.com/ZcashFoundation/frost-tools/issues/612).
 - [Request for technical feedback: frost#1102](https://github.com/ZcashFoundation/frost/discussions/1102).
 
 Publication is complete. Maintainer validation or acceptance of the work has not been established.

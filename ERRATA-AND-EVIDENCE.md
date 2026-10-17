@@ -28,6 +28,7 @@ This note supersedes overstated or incorrect claims in the original FROST review
 ## Communication status
 
 - [Relay issue #611](https://github.com/ZcashFoundation/frost-tools/issues/611) was published with the historical numbers labelled as reported and the debug build correctly stated.
+- [Socket listener issue #612](https://github.com/ZcashFoundation/frost-tools/issues/612) documents the independently observed task panic in demo TCP mode, with process and signing impact left unclaimed.
 - [Maintainer discussion #1102](https://github.com/ZcashFoundation/frost/discussions/1102) requests technical feedback and links these reports.
 - Publication of an issue/discussion is not maintainer validation or acceptance, and no such acceptance is claimed here.
 
