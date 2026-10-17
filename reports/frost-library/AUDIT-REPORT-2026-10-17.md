@@ -108,7 +108,7 @@ Seguendo la lezione dell'audit Mina (gli override dei ciphersuite sono dove si c
 ## Note operative
 
 - DKG bias e coordinator-trust sono limitazioni documentate/accettate, non finding.
-- Se mai emergesse un finding serio: disclosure responsabile coordinata con ZF (embargo + fix) PRIMA di qualsiasi submission al grant Q4 (finestra 30 ott–13 nov). Il grant premia lavoro completato + disclosure corretta.
+- Se mai emergesse un finding serio: disclosure responsabile coordinata con ZF (embargo + fix) PRIMA di qualsiasi submission al grant Q4 (finestra da confermare con l'annuncio ufficiale). Il grant premia lavoro completato + disclosure corretta.
 - Queste note sono state pubblicate. Issue sul relay: [frost-tools#611](https://github.com/ZcashFoundation/frost-tools/issues/611); richiesta di feedback: [frost#1102](https://github.com/ZcashFoundation/frost/discussions/1102).
 
 *Il conteggio originario di 14 lead non è una misura di copertura o una prova di sicurezza. Alcune motivazioni sono state corrette; rimane necessario il riscontro tecnico dei maintainer.*

@@ -14,7 +14,7 @@
 - `create_new_session` accetta pubkey arbitrarie senza validazione né limiti di numero.
 - Ogni `send` rinnova il timeout (24h), quindi l'attaccante mantiene le sessioni vive con ping periodici.
 
-**PoC concettuale:** login self-registered → `create_new_session` con ~29k pubkey fasulle → `send` con 29k recipients × 64 KiB ≈ **1,9 GB da una singola richiesta HTTP**. Ripetibile → OOM-kill.
+**PoC concettuale:** login self-registered → `create_new_session` con ~29k pubkey fasulle → `send` con 29k recipients × 64 KiB ≈ **1,90 GB di payload teorico accodato da una richiesta HTTP** (non è la dimensione del body HTTP né una RSS misurata). Ripetibile → OOM-kill.
 Variante mirata: `recipients` vuoto → coda `SessionParticipant::Coordinator`; qualsiasi partecipante può seppellire la coda del coordinator → liveness kill su cerimonia altrui.
 
 **Impatto:** availability del relay (tutte le cerimonie). FROST resta *safe*, ma nessuna firma si completa a relay morto. Demo code ("not for production") → valore submission basso, bug reale.
