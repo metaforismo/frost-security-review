@@ -43,4 +43,4 @@ AI-assisted source review and test artifacts. The original reports describe loca
 
 ## License declaration
 
-Reports: [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/). PoC code: MIT.
+Original report text and analysis: [MIT or CC BY 4.0, at your choice](LICENSE-REPORTS.md). PoC, harness, and verification code: [MIT](LICENSE). Quoted third-party material retains its original rights and licenses.
