@@ -1,5 +1,7 @@
 # Security Audit — `frost-client` DKG orchestration + `zcash-sign`
 
+> **Historical research notes.** Read [errata and evidence status](../../ERRATA-AND-EVIDENCE.md) before using any candidate finding, absolute safety claim, deployment claim, or test count below. The later review did not independently rerun every claim, and original draft/privacy references describe the working state before publication.
+
 *Sub-audit del depth track frost-client, 2026-10-17. Analisi statica, nessuna disclosure.*
 
 **Nota versione**: il workspace frost-tools pinna **frost-core 2.2.0** (Cargo.toml:24), non 3.0.0. Verifiche libreria fatte contro la 2.2.0 effettiva.

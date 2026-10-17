@@ -1,5 +1,7 @@
 # Round 2 — Worker D: chaining sistematico + revisit lead killati (FROST)
 
+> **Historical research notes.** Read [errata and evidence status](../../ERRATA-AND-EVIDENCE.md) before using any candidate finding, absolute safety claim, deployment claim, or test count below. The later review did not independently rerun every claim. In particular, the original blanket conclusion that nonce reuse was impossible or that all chains to funds were formally eliminated is withdrawn. Original draft/privacy references describe the working state before publication.
+
 *2026-10-17. NESSUNA disclosure, NESSUNA submission. Report privato per il parent.*
 *Dottrina chaining: per ogni coppia/tripla, scenario concreto + verdetto onesto (scala / non scala + perché).*
 

@@ -1,5 +1,7 @@
 # Security Audit — `frostd` (FROST message relay server)
 
+> **Historical research notes.** Read [errata and evidence status](../../ERRATA-AND-EVIDENCE.md) before using any candidate finding, absolute safety claim, deployment claim, or test count below. The later review did not independently rerun every claim, and original draft/privacy references describe the working state before publication.
+
 *Sub-audit del depth track frost-client, 2026-10-17. Analisi statica, nessuna disclosure.*
 
 ## CANDIDATO-FINDING #1 — Memory exhaustion via fan-out illimitato in `send` (DoS)
