@@ -15,7 +15,7 @@
 
 ---
 
-## PoC #1 — frostd memory exhaustion via fan-out illimitato — CONFERMATO
+## PoC #1 — frostd memory exhaustion via fan-out illimitato — riportato storicamente
 
 **Setup.**
 - Binario `frostd` compilato dal sorgente (`target-workerB/debug/frostd`).
@@ -24,7 +24,7 @@
 
 **Ricontrollo codice:** confermato nessun bound — `send` controlla solo `args.msg.len() > MAX_MSG_SIZE` (65535) e poi `args.msg.clone()` per ogni recipient in `VecDeque<Msg>` senza limiti (`functions.rs:196-237`).
 
-**Output osservato (numeri misurati):**
+**Misure riportate dal report originario (log grezzi non disponibili):**
 
 | recipients | msg | crescita RSS riportata | payload teorico |
 |---|---|---|---|
@@ -34,12 +34,12 @@
 
 Crescita riportata circa lineare: una copia di 65.535 byte per destinatario più overhead. Il driver converte RSS in KiB dividendo per 1.024: l'unità corretta della tabella è MiB; le precedenti stime di ~63.1 KB/destinatario mescolavano unità e sono ritirate. `send` ha risposto `200 OK` in 52–148 ms in tutti i casi.
 
-**Kill test:** server fresco sotto `ulimit -v 800000`, singolo `send` con **29000 recipients × 65535 B** (≈1.9 GB estrapolati):
-- il server ha abortito: log `memory allocation of 65535 bytes failed` → SIGABRT (comportamento standard di Rust su allocator failure);
-- il client ha visto `hyper::Error(IncompleteMessage)` (connessione troncata);
-- `ps` conferma: **SERVER DEAD**.
+**Kill test riportato dal report originario:** server fresco sotto `ulimit -v 800000`, singolo `send` con **29000 recipients × 65535 B** (≈1.9 GB di payload teorico):
+- il report registra `memory allocation of 65535 bytes failed` → SIGABRT (comportamento standard di Rust su allocator failure);
+- il report registra `hyper::Error(IncompleteMessage)` lato client (connessione troncata);
+- il report registra **SERVER DEAD** tramite `ps`. Il run non è stato riprodotto indipendentemente nella verifica successiva.
 
-**Verdetto: CONFERMATO.** Un singolo `send` autenticato può accodare ~1.9 GB con una richiesta HTTP e uccidere il processo frostd (DoS totale del relay → nessuna cerimonia si completa). Il prodotto 29.000 × 65.535 = 1.900.515.000 byte è il payload teorico (circa 1,90 GB / 1,77 GiB), non una RSS misurata nel run che abortisce. Nota onesta: serve un login valido (self-registration, nessuna validazione d'identità), e il codice è demo ("not for production") — impatto reale ma valore di submission basso, come già notato nel Round 1.
+**Verdetto attuale.** Il codice copia il messaggio una volta per destinatario senza un limite aggregato; una verifica locale limitata ha recuperato 64 copie integre. Il report originario descrive un SIGABRT sotto limite di memoria, ma i log grezzi non sono disponibili e il crash non è stato riprodotto nella revisione successiva. Il prodotto 29.000 × 65.535 = 1.900.515.000 byte è il payload *teorico richiesto* (circa 1,90 GB / 1,77 GiB), non memoria effettivamente accodata né RSS misurata nel run che abortisce. Servono un login ottenibile con registrazione autonoma e una sessione; `frostd` è codice demo ("not for production").
 
 ---
 
