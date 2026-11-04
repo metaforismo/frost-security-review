@@ -1,0 +1,66 @@
+=== F1 signing-oracle execution PoC (Lane A2) ===
+frost-core v3.0.0 @ 0966bd1 · ciphersuite Ed25519Sha512 (randomized FROST mechanics identical to ZIP-312's)
+
+--- RUN 1: F1 — rogue coordinator C + conforming auto-signing P1/P2 ---
+
+[C] step 1: craft T_attack (pays the attacker)
+[C] T_attack = "ZCASH-TX: in=shielded-input(wallet-vk) out=100.0 ZEC -> t1ATTACKERxyz (coordinator-controlled)"
+[C] step 2: Round 1 complete (2 commitments collected)
+[C] step 3: randomizer generated; msg = SIGHASH(T_attack) = 0920d50896f2be54f0c5b0d73f272d710594f3346026c550eb160294c43c01de
+  [P1] received Round 2 package (channel peer labelled 'C')
+  [P1] CHECK 1 (commitment well-formedness, RFC 9591 L979-981): PASS
+  [P1] CHECK 2 (self-membership, RFC 9591 L983): PASS
+  [P1] CHECK 3 (SIGHASH consistency, ZIP-312 L188-190): PASS
+  [P1] authorization decision: NONE SPECIFIED (ZIP-312: out of scope) -> auto-sign
+  [P1] share contributed
+  [P2] received Round 2 package (channel peer labelled 'C')
+  [P2] CHECK 1 (commitment well-formedness, RFC 9591 L979-981): PASS
+  [P2] CHECK 2 (self-membership, RFC 9591 L983): PASS
+  [P2] CHECK 3 (SIGHASH consistency, ZIP-312 L188-190): PASS
+  [P2] authorization decision: NONE SPECIFIED (ZIP-312: out of scope) -> auto-sign
+  [P2] share contributed
+[C] step 4: shares aggregated -> (R, z)
+
+>>> RUN 1 RESULT: signature VERIFIES under randomized VK (VK+alphaG)
+>>> for SIGHASH(T_attack). Every specified check passed on P1 and P2.
+>>> F1 CONFIRMED-BY-EXECUTION: valid signature on attacker-chosen transaction from
+>>> honest, conforming participants. No check was skipped; none is specified beyond the three.
+
+--- RUN 2: F1 x F2 — imposter 'coordinator' A (no compromise of real C) ---
+(participants' check set is unchanged; 'authenticated' channel has no specified identity model)
+
+[A(imposter)] step 1: craft T_attack (pays the attacker)
+[A(imposter)] T_attack = "ZCASH-TX: in=shielded-input(wallet-vk) out=100.0 ZEC -> t1ATTACKERxyz (coordinator-controlled)"
+[A(imposter)] step 2: Round 1 complete (2 commitments collected)
+[A(imposter)] step 3: randomizer generated; msg = SIGHASH(T_attack) = 0920d50896f2be54f0c5b0d73f272d710594f3346026c550eb160294c43c01de
+  [P1] received Round 2 package (channel peer labelled 'A(imposter)')
+  [P1] CHECK 1 (commitment well-formedness, RFC 9591 L979-981): PASS
+  [P1] CHECK 2 (self-membership, RFC 9591 L983): PASS
+  [P1] CHECK 3 (SIGHASH consistency, ZIP-312 L188-190): PASS
+  [P1] authorization decision: NONE SPECIFIED (ZIP-312: out of scope) -> auto-sign
+  [P1] share contributed
+  [P2] received Round 2 package (channel peer labelled 'A(imposter)')
+  [P2] CHECK 1 (commitment well-formedness, RFC 9591 L979-981): PASS
+  [P2] CHECK 2 (self-membership, RFC 9591 L983): PASS
+  [P2] CHECK 3 (SIGHASH consistency, ZIP-312 L188-190): PASS
+  [P2] authorization decision: NONE SPECIFIED (ZIP-312: out of scope) -> auto-sign
+  [P2] share contributed
+[A(imposter)] step 4: shares aggregated -> (R, z)
+
+>>> RUN 2 RESULT: identical acceptance, signature VERIFIES.
+>>> F2 composition CONFIRMED-BY-EXECUTION: no coordinator compromise needed;
+
+--- RUN 3 (negative control): participants WITH out-of-spec authorization ---
+
+[C] step 1: craft T_attack (pays the attacker)
+[C] T_attack = "ZCASH-TX: in=shielded-input(wallet-vk) out=100.0 ZEC -> t1ATTACKERxyz (coordinator-controlled)"
+[C] step 2: Round 1 complete (2 commitments collected)
+[C] step 3: randomizer generated; msg = SIGHASH(T_attack) = 0920d50896f2be54f0c5b0d73f272d710594f3346026c550eb160294c43c01de
+  [P1] received Round 2 package (channel peer labelled 'C')
+  [P1] CHECK 1 (commitment well-formedness, RFC 9591 L979-981): PASS
+  [P1] CHECK 2 (self-membership, RFC 9591 L983): PASS
+  [P1] CHECK 3 (SIGHASH consistency, ZIP-312 L188-190): PASS
+>>> EXPECTED: ceremony aborted -> [P1] EXTRA (out-of-spec) authorization check: transaction not allowlisted -> ABORT (control)
+>>> Control holds: only non-specified checks stop the attack.
+
+=== DONE ===

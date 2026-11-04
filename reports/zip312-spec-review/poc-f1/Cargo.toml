@@ -1,0 +1,17 @@
+[package]
+name = "f1-signing-oracle-poc"
+version = "0.1.0"
+edition = "2021"
+
+# frost-* are path dependencies pinned to the vendored checkout at
+# ~/workspace/bounty/reports/zcash-audit/frost/frost @ commit 0966bd1
+# (frost-core v3.0.0) — verified via `git rev-parse HEAD` before building.
+[dependencies]
+frost-core = { path = "../../frost/frost/frost-core" }
+frost-ed25519 = { path = "../../frost/frost/frost-ed25519" }
+frost-rerandomized = { path = "../../frost/frost/frost-rerandomized" }
+rand_core = "0.10"
+rand_chacha = "0.10"
+sha2 = "0.10"
+
+[workspace]
